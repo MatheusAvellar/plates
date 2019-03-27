@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title> Plates </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href="https://fonts.googleapis.com/css?family=Monda:400,700" rel="stylesheet">
+  <style type="text/css">
+    body {
+      max-width: 800px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    ul {
+      margin: 0;
+      padding: 0;
+    }
+    .plate {
+      position: relative;
+      font-size: 50px;
+      font-family: "Monda", sans-serif;
+      text-transform: uppercase;
+      margin: 20px;
+      display: inline-block;
+      border: 4px solid #000;
+      border-radius: 9px;
+      padding: 12px 20px 0;
+      background-image: linear-gradient(#0168ab 20px, 0, #fff);
+      background-color: #fff;
+      -webkit-font-smoothing: none;
+    }
+    .plate::before {
+      content: "Brasil";
+      position: absolute;
+      color: #fff;
+      font-size: 10px;
+      left: 0;
+      top: 3px;
+      width: 100%;
+      font-weight: 700;
+    }
+    :not(.big).plate::after {
+      content: "(" attr(data-word) ")";
+      position: absolute;
+      color: #565656;
+      font-size: 10px;
+      left: 0;
+      bottom: -23px;
+      width: 100%;
+    }
+
+    .big.plate {
+      margin: 40px;
+      border-width: 6px;
+      background-image: linear-gradient(#0168ab 36px, 0, #fff);
+      padding: 18px 20px 0;
+      width: 500px;
+      box-sizing: border-box;
+    }
+    .big.plate input {
+      outline: 0;
+      background-color: transparent;
+      text-transform: uppercase;
+      color: inherit;
+      font-family: "Monda", sans-serif;
+      font-size: 90px;
+      border: 0;
+      width: 100%;
+      text-align: center;
+    }
+    .big.plate::before {
+      font-size: 18px;
+      top: 6px;
+    }
+    .big.plate.wrong {
+      color: crimson;
+      border-color: crimson;
+    }
+    .big.plate.wrong::after {
+      content: attr(data-len) "/7";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 17px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body onload="init();">
+  <main>
+    <div id="main-plate" class="big plate">
+      <!-- TODO: 7 inputs, one for each character? -->
+      <input id="input" type="text" value="ZIM8R40" maxlength="7"/>
+    </div>
+    <ul id="preplates"></ul>
+  </main>
+  <script type="text/javascript">
+    // TODO: Comment the code more please
+    const main_plate = document.getElementById("main-plate");
+    const input = document.getElementById("input");
+    const preplates = document.getElementById("preplates");
+    const words = [];
+
+    input.oninput = typed;
+    function typed(e) {
+      input.value = input.value
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036F]/g, "")
+        .replace(/ç/g, "c")
+        .replace(/[^0-9a-z]/g,"");
+      main_plate.dataset.len = input.value.length;
+      if(input.value.length !== 7) {
+        main_plate.classList.add("wrong");
+        return;
+      }
+      const result = checkPlate(input.value, false);
+      input.value = result.word;
+
+      if(result.valid)
+        main_plate.classList.remove("wrong");
+      else
+        main_plate.classList.add("wrong");
+    }
+
+    function init() {
+      get("./plates.csv", function(req) {
+        if(req.status >= 200 && req.status < 400) {
+          const data = req.responseText.split(",");
+          data.forEach(w => checkPlate(w, true));
+        }
+      });
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function get(url, callback) {
+      const request = new XMLHttpRequest();
+      request.open("GET", url, true);
+      request.onload = () => callback(request);
+      request.send();
+    }
+
+    async function gatherData() {
+      const alphabet = "abcdefghijlmnopqrstuvxzç".split``;
+      const size = alphabet.length;
+
+      let count = 0;
+      for(let i = 0; i < size; i++) {
+        if(alphabet[i] === 'ç')
+          continue;
+
+        for(let j = 0; j < size; j++) {
+          // AA?
+          if(alphabet[i] === alphabet[j]
+          // QA?
+          || alphabet[i]=='q'
+          && alphabet[j]!='u'
+          // HT?
+          || alphabet[i]=='h'
+          && isConsonant(alphabet[j]))
+            continue;
+
+          for(let k = 0; k < size; k++) {
+            // TRS
+            if(isConsonant(alphabet[i])
+            && isConsonant(alphabet[j])
+            && isConsonant(alphabet[k])
+            // AEI
+            || !isConsonant(alphabet[i])
+            && !isConsonant(alphabet[j])
+            && !isConsonant(alphabet[k])
+            // ?EE
+            || !isConsonant(alphabet[j])
+            && !isConsonant(alphabet[k])
+            && alphabet[j]==alphabet[k]
+            // ?TT
+            || alphabet[j]!='s'
+            && alphabet[j]!='r'
+            && alphabet[j]==alphabet[k]
+            // ?ÇT
+            || alphabet[j]=='ç'
+            && isConsonant(alphabet[k])
+            // ?QA
+            || alphabet[j]=='q'
+            && alphabet[k]!='u'
+            // ?HT
+            || alphabet[j]=='h'
+            && isConsonant(alphabet[k])) continue;
+
+            const out = alphabet[i] + alphabet[j] + alphabet[k];
+            processPrefix(out);
+            count++;
+
+            if(count % 10 === 0) {
+              console.log("Pausing");
+              await sleep(5500);
+              console.log("Resuming");
+            }
+          }
+        }
+      }
+
+      console.log(`Done (${count} words)`);
+    }
+
+    function isConsonant(letter) {
+      return "aeiou".indexOf(letter) < 0;
+    }
+
+    // TODO: This could be removed ¯\_(ツ)_/¯
+    function processPrefix(prefix) {
+      const URL = "https://cors-anywhere.herokuapp.com/http://dicionario-aberto.net/search-json?prefix=";
+      get(URL+prefix, function(req) {
+        if(req.status >= 200 && req.status < 400) {
+          const data = JSON.parse(req.responseText)
+            .list
+            // Remove accents (á -> a)
+            .map(w => w.normalize("NFKD").replace(/[\u0300-\u036F]/g, ""))
+            // Lower case, replace Ç with C
+            .map(w => w.trim().toLowerCase().replace(/ç/ig, "c"))
+            // Remove all non-letters
+            .map(w => w.replace(/[^a-z]/ig, ""))
+            // Remove words that aren't 7 characters in length
+            .filter(w => w.length === 7);
+
+          // Attempt to turn each word into license plate
+          data.forEach(w => checkPlate(w, true));
+        }
+      });
+    }
+
+    // TODO: I don't love this function
+    function checkPlate(word, add) {
+      if(word.length !== 7) {
+        console.log("Word length is not 7");
+        return {
+          valid: false,
+          word: word
+        }
+      }
+      if(word.slice(0,3).replace(/[^a-z]/gi,"").length !== 3) {
+        console.log("First 3 characters are not letters");
+        return {
+          valid: false,
+          word: word
+        }
+      }
+
+      const warr = word.split``;
+      const num_index = [3,5,6];
+      const mapping = {
+        "O": 0, "D": 0,
+        "I": 1, "L": 1,
+        "Z": 2,
+        "E": 3,
+        "A": 4,
+        "S": 5,
+        "G": 6,
+        "T": 7,
+        "B": 8, "X": 8,
+      };
+
+      let err = false;
+      for(let i of num_index) {
+        const rel = !isNaN(warr[i]) ? warr[i] : mapping[warr[i].toUpperCase()];
+        if(rel || rel === 0) warr[i] = rel;
+        else {
+          console.log(`Could not find match for letter '${warr[i]}' of word '${warr.join("")}'.`);
+          err = true;
+        }
+      }
+      if(err)
+        return {
+          valid: false,
+          word: warr.join("")
+      }
+
+      const result = warr.join("").replace(/[^0-9a-z]/gi,"");
+      if(result.length < 7) {
+        console.log("Use of invalid characters");
+        return {
+          valid: false,
+          word: warr.join("")
+        }
+      }
+
+      // Success!!
+      if(add) {
+        words.push(word);
+
+        const div = document.createElement("div");
+        div.innerText = result;
+        div.className = "plate";
+        div.dataset.word = word;
+        preplates.appendChild(div);
+      }
+
+      return {
+        valid: true,
+        word: result
+      };
+    }
+  </script>
+</body>
+</html>
