@@ -42,8 +42,7 @@ ul {
   width: 100%;
   font-weight: 700;
 }
-:not(.big).plate::after {
-  content: "(" attr(data-word) ")";
+:not(.big).plate span {
   position: absolute;
   color: #565656;
   font-size: 10px;
@@ -296,9 +295,11 @@ ul {
         words.push(word);
 
         const li = document.createElement("li");
-        li.innerText = result;
+        li.textContent = result;
         li.className = "plate";
-        li.dataset.word = word;
+        const span = document.createElement("span");
+        span.textContent = `(${word})`;
+        li.appendChild(span);
         preplates.appendChild(li);
       }
 
