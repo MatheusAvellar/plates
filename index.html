@@ -6,91 +6,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link href="https://fonts.googleapis.com/css?family=Monda:400,700" rel="stylesheet">
   <style type="text/css">
-    body {
-      max-width: 800px;
-      margin: 20px auto;
-      text-align: center;
-    }
-    ul {
-      margin: 0;
-      padding: 0;
-    }
-    .plate {
-      position: relative;
-      font-size: 50px;
-      font-family: "Monda", sans-serif;
-      text-transform: uppercase;
-      margin: 20px;
-      display: inline-block;
-      border: 4px solid #000;
-      border-radius: 9px;
-      padding: 12px 20px 0;
-      background-image: linear-gradient(#0168ab 20px, 0, #fff);
-      background-color: #fff;
-      -webkit-font-smoothing: none;
-    }
-    .plate::before {
-      content: "Brasil";
-      position: absolute;
-      color: #fff;
-      font-size: 10px;
-      left: 0;
-      top: 3px;
-      width: 100%;
-      font-weight: 700;
-    }
-    :not(.big).plate::after {
-      content: "(" attr(data-word) ")";
-      position: absolute;
-      color: #565656;
-      font-size: 10px;
-      left: 0;
-      bottom: -23px;
-      width: 100%;
-    }
+body {
+  max-width: 800px;
+  margin: 20px auto;
+  text-align: center;
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.plate {
+  position: relative;
+  font-size: 50px;
+  font-family: "Monda", sans-serif;
+  text-transform: uppercase;
+  margin: 20px;
+  display: inline-block;
+  border: 4px solid #000;
+  border-radius: 9px;
+  padding: 12px 20px 0;
+  background-image: linear-gradient(#0168ab 20px, 0, #fff);
+  background-color: #fff;
+  -webkit-font-smoothing: none;
+}
+.plate::before {
+  content: "Brasil";
+  position: absolute;
+  color: #fff;
+  font-size: 10px;
+  left: 0;
+  top: 3px;
+  width: 100%;
+  font-weight: 700;
+}
+:not(.big).plate::after {
+  content: "(" attr(data-word) ")";
+  position: absolute;
+  color: #565656;
+  font-size: 10px;
+  left: 0;
+  bottom: -23px;
+  width: 100%;
+}
 
-    .big.plate {
-      margin: 40px;
-      border-width: 6px;
-      background-image: linear-gradient(#0168ab 36px, 0, #fff);
-      padding: 18px 20px 0;
-      width: 500px;
-      box-sizing: border-box;
-    }
-    .big.plate input {
-      outline: 0;
-      background-color: transparent;
-      text-transform: uppercase;
-      color: inherit;
-      font-family: "Monda", sans-serif;
-      font-size: 90px;
-      border: 0;
-      width: 100%;
-      text-align: center;
-    }
-    .big.plate::before {
-      font-size: 18px;
-      top: 6px;
-    }
-    .big.plate.wrong {
-      color: crimson;
-      border-color: crimson;
-    }
-    .big.plate.wrong::after {
-      content: attr(data-len) "/7";
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      font-size: 17px;
-      color: #fff;
-    }
+.big.plate {
+  margin: 40px;
+  border-width: 6px;
+  background-image: linear-gradient(#0168ab 36px, 0, #fff);
+  padding: 18px 20px 0;
+  width: 500px;
+  box-sizing: border-box;
+}
+.big.plate input {
+  outline: 0;
+  background-color: transparent;
+  text-transform: uppercase;
+  color: inherit;
+  font-family: "Monda", sans-serif;
+  font-size: 90px;
+  border: 0;
+  width: 100%;
+  text-align: center;
+}
+.big.plate::before {
+  font-size: 18px;
+  top: 6px;
+}
+.big.plate.wrong {
+  color: crimson;
+  border-color: crimson;
+}
+.big.plate.wrong::after {
+  content: attr(data-len) "/7";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 17px;
+  color: #fff;
+}
   </style>
 </head>
 <body onload="init();">
   <main>
     <div id="main-plate" class="big plate">
       <!-- TODO: 7 inputs, one for each character? -->
-      <input id="input" type="text" value="ZIM8R40" maxlength="7"/>
+      <input id="input" type="text" value="POS5A70" maxlength="7"/>
     </div>
     <ul id="preplates"></ul>
   </main>
@@ -239,14 +242,14 @@
         return {
           valid: false,
           word: word
-        }
+        };
       }
       if(word.slice(0,3).replace(/[^a-z]/gi,"").length !== 3) {
         console.log("First 3 characters are not letters");
         return {
           valid: false,
           word: word
-        }
+        };
       }
 
       const warr = word.split``;
@@ -272,10 +275,11 @@
           err = true;
         }
       }
-      if(err)
+      if(err) {
         return {
           valid: false,
           word: warr.join("")
+        };
       }
 
       const result = warr.join("").replace(/[^0-9a-z]/gi,"");
@@ -284,18 +288,18 @@
         return {
           valid: false,
           word: warr.join("")
-        }
+        };
       }
 
       // Success!!
       if(add) {
         words.push(word);
 
-        const div = document.createElement("div");
-        div.innerText = result;
-        div.className = "plate";
-        div.dataset.word = word;
-        preplates.appendChild(div);
+        const li = document.createElement("li");
+        li.innerText = result;
+        li.className = "plate";
+        li.dataset.word = word;
+        preplates.appendChild(li);
       }
 
       return {
